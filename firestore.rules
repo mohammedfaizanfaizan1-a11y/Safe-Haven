@@ -1,0 +1,89 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {userId}
+// Fields:
+//   - uid: string (required) - User's unique ID
+//   - email: string (required) - User's email
+//   - displayName: string - User's name
+//   - photoURL: string - Profile picture URL
+//   - emergencyContacts: array - List of contact objects {name, phone, email}
+//   - emergencyEmails: array - List of contact emails for querying
+//   - lastLocation: object - {lat, lng, timestamp}
+//   - isSOSActive: boolean - SOS status
+//
+// Collection: publicProfiles
+// Document ID: {userId}
+// Fields:
+//   - uid: string (required) - User's unique ID
+//   - displayName: string - User's name
+//   - photoURL: string - Profile picture URL
+//   - lastLocation: object - {lat, lng, timestamp}
+//   - isSOSActive: boolean - SOS status
+//   - emergencyEmails: array - List of contact emails allowed to track
+//
+// Collection: alerts
+// Document ID: auto-generated
+// Fields:
+//   - userId: string (required) - UID of the user who triggered SOS
+//   - userName: string - Name of the user
+//   - location: object - {lat, lng}
+//   - status: string - "active" or "resolved"
+//   - createdAt: timestamp - Time of alert
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string;
+    }
+
+    function isValidPublicProfile(data) {
+      return data.keys().hasAll(['uid']) &&
+             data.uid is string;
+    }
+
+    function isValidAlert(data) {
+      return data.keys().hasAll(['userId', 'location', 'status', 'createdAt']) &&
+             data.userId is string &&
+             data.location is map &&
+             data.status in ['active', 'resolved'];
+    }
+
+    // Rules
+    match /users/{userId} {
+      // Private profile - only owner can read/write
+      allow read, write: if isOwner(userId);
+    }
+
+    match /publicProfiles/{userId} {
+      // Public profile - anyone authenticated can read (for safety network)
+      // In a production app, we might restrict read to only those in emergencyEmails
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    match /alerts/{alertId} {
+      // Alerts are visible to all authenticated users for community safety
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidAlert(request.resource.data) && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid);
+    }
+  }
+}

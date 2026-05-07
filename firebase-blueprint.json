@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Application user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "emergencyEmails": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "emergencyContacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "phone": { "type": "string" },
+              "email": { "type": "string" }
+            }
+          }
+        },
+        "lastLocation": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "timestamp": { "type": "string", "format": "date-time" }
+          }
+        },
+        "isSOSActive": { "type": "boolean" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Alert": {
+      "title": "Alert",
+      "description": "Emergency SOS alert",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "status": { "type": "string", "enum": ["active", "resolved"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "location", "status", "createdAt"]
+    },
+    "PublicProfile": {
+      "title": "Public Profile",
+      "description": "Publicly visible user information for safety tracking",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "emergencyEmails": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lastLocation": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "timestamp": { "type": "string", "format": "date-time" }
+          }
+        },
+        "isSOSActive": { "type": "boolean" }
+      },
+      "required": ["uid"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User private profiles and settings"
+    },
+    "/publicProfiles/{userId}": {
+      "schema": "PublicProfile",
+      "description": "Public user info for safety network"
+    },
+    "/alerts/{alertId}": {
+      "schema": "Alert",
+      "description": "Active and historical SOS alerts"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "SafeHaven",
+  "description": "A comprehensive women's safety system featuring emergency SOS, live location tracking, and trusted contact management.",
+  "requestFramePermissions": ["geolocation"]
+}
